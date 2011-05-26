@@ -9,10 +9,13 @@ import base64
 import ConfigParser
 import errno
 import fuse
+import httplib2
 import os
+import re
 import simplejson
 import stat
 import sys
+import time
 
 fuse.fuse_python_api = ( 0, 2 )
 
@@ -49,7 +52,7 @@ class PressFS( fuse.Fuse ) :
 
 		self.version = '0.1.0'
 
-		if ( os.path.isfile( 'config.ini' ) ) == False :
+		if ( os.path.isfile( 'config.ini' ) == False ) :
 			print "You need setup config.ini first."
 			sys.exit()
 
@@ -71,6 +74,16 @@ class PressFS( fuse.Fuse ) :
 			st.dir()
 			return st
 
+		match = re.match( '/users/(.*)', path )
+		if ( match ) :
+			users = self.wp_request( 'get_user_list' )['users']
+			user = users[match.group(1)]
+			when = time.strptime( user['registered'], '%Y-%m-%d %H:%M:%S' )
+
+			st.dir()
+			st.time( time.mktime( when ) )
+			return st
+
 		return -errno.ENOENT
 
 	def readdir( self, path, offset ) :
@@ -79,20 +92,30 @@ class PressFS( fuse.Fuse ) :
 
 		if ( path == '/' ) :
 			yield fuse.Direntry( 'users' )
+			return
+
+		if ( path == '/users' ) :
+			users = self.wp_request( 'get_user_list' )['users']
+			for ( u ) in users :
+				yield fuse.Direntry( u )
+			return
 
 	def wp_request( self, action ) :
-		req_url = wp_url + '&call=' + action
+		req_url = self.wp_url + '&call=' + action
 		http = httplib2.Http()
 
 		# httplib2 won't send auth headers on the first request
 		# so we force them in
-		req_auth = base64.encodestring( self.wp_username + ':' + wp_password )
+		req_auth = base64.encodestring(
+			self.wp_username + ':' + self.wp_password
+		)
 
 		req_headers = {
 			'Authorization' : 'Basic ' + req_auth,
 			'User-Agent' : 'PressFS/' + self.version
 		}
 
+		print ">> WP REQUEST : " + req_url
 		resp, content = http.request(
 			req_url,
 			'POST',
@@ -101,7 +124,7 @@ class PressFS( fuse.Fuse ) :
 
 		return simplejson.loads( content )
 
-if ( __name__ ) == '__main__' :
+if ( __name__ == '__main__' ) :
 	fs = PressFS()
 	fs.parse( errex = 1 )
 	fs.main()
