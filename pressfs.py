@@ -5,10 +5,12 @@
 # http://josephscott.org/
 #
 
+import base64
 import ConfigParser
 import errno
 import fuse
 import os
+import simplejson
 import stat
 import sys
 
@@ -77,6 +79,27 @@ class PressFS( fuse.Fuse ) :
 
 		if ( path == '/' ) :
 			yield fuse.Direntry( 'users' )
+
+	def wp_request( self, action ) :
+		req_url = wp_url + '&call=' + action
+		http = httplib2.Http()
+
+		# httplib2 won't send auth headers on the first request
+		# so we force them in
+		req_auth = base64.encodestring( self.wp_username + ':' + wp_password )
+
+		req_headers = {
+			'Authorization' : 'Basic ' + req_auth,
+			'User-Agent' : 'PressFS/' + self.version
+		}
+
+		resp, content = http.request(
+			req_url,
+			'POST',
+			headers = req_headers
+		)
+
+		return simplejson.loads( content )
 
 if ( __name__ ) == '__main__' :
 	fs = PressFS()
