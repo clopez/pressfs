@@ -8,7 +8,9 @@
 import ConfigParser
 import errno
 import fuse
+import os
 import stat
+import sys
 
 fuse.fuse_python_api = ( 0, 2 )
 
@@ -44,6 +46,10 @@ class PressFS( fuse.Fuse ) :
 		fuse.Fuse.__init__( self, *args, **kw )
 
 		self.version = '0.1.0'
+
+		if ( os.path.isfile( 'config.ini' ) ) == False :
+			print "You need setup config.ini first."
+			sys.exit()
 
 		self.config = ConfigParser.ConfigParser()
 		self.config.read( 'config.ini' )
