@@ -6,6 +6,7 @@
 #
 
 import base64
+import calendar
 import ConfigParser
 import errno
 import fuse
@@ -62,6 +63,9 @@ class PressFS( fuse.Fuse ) :
 		self.wp_url = self.config.get( 'WordPress', 'url' ) + '?pressfs=1'
 		self.wp_username = self.config.get( 'WordPress', 'username' )
 		self.wp_password = self.config.get( 'WordPress', 'password' )
+		self.req_expire = self.config.getint( 'Cache', 'req_expire' )
+
+		self.req_cache = { }
 
 	def getattr( self, path ) :
 		st = PressFS_Stat()
@@ -102,7 +106,14 @@ class PressFS( fuse.Fuse ) :
 
 	def wp_request( self, action ) :
 		req_url = self.wp_url + '&call=' + action
-		http = httplib2.Http()
+		now = calendar.timegm( time.gmtime() )
+
+		# check the cache first
+		if ( req_url in self.req_cache ) :
+			if ( self.req_cache[req_url]['expire'] > now ) :
+				return self.req_cache[req_url]['data']
+			else :
+				del self.req_cache[req_url]
 
 		# httplib2 won't send auth headers on the first request
 		# so we force them in
@@ -116,13 +127,19 @@ class PressFS( fuse.Fuse ) :
 		}
 
 		print ">> WP REQUEST : " + req_url
+		http = httplib2.Http()
 		resp, content = http.request(
 			req_url,
 			'POST',
 			headers = req_headers
 		)
 
-		return simplejson.loads( content )
+		self.req_cache[req_url] = {
+			'data'	: simplejson.loads( content ),
+			'expire': now + self.req_expire
+		}
+
+		return self.req_cache[req_url]['data']
 
 if ( __name__ == '__main__' ) :
 	fs = PressFS()
