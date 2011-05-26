@@ -5,6 +5,7 @@
 # http://josephscott.org/
 #
 
+import ConfigParser
 import errno
 import fuse
 import stat
@@ -43,6 +44,13 @@ class PressFS( fuse.Fuse ) :
 		fuse.Fuse.__init__( self, *args, **kw )
 
 		self.version = '0.1.0'
+
+		self.config = ConfigParser.ConfigParser()
+		self.config.read( 'config.ini' )
+
+		self.wp_url = self.config.get( 'WordPress', 'url' ) + '?pressfs=1'
+		self.wp_username = self.config.get( 'WordPress', 'username' )
+		self.wp_password = self.config.get( 'WordPress', 'password' )
 
 	def getattr( self, path ) :
 		st = PressFS_Stat()
