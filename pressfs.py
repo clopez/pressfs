@@ -100,6 +100,28 @@ class PressFS( fuse.Fuse ) :
 
 		return -errno.ENOENT
 
+	def read( self, path, size, offset ) :
+		data = ''
+
+		match = re.match( '/users/(.*?)/(.*)', path )
+		if ( match ) :
+			users = self.wp_request( 'get_user_list' )['users']
+			user = users[ match.group( 1 ) ]
+			data = user[ match.group( 2 ) ]
+
+		return self.read_data( data, size, offset )
+
+	def read_data( self, data, size, offset ) :
+		slen = len( data )
+		if ( offset < slen ) :
+			if ( ( offset + size ) > slen ) :
+				size = slen - offset
+			buf = data[ offset : offset + size ]
+		else :
+			buf = ''
+
+		return buf
+
 	def readdir( self, path, offset ) :
 		yield fuse.Direntry( '.' )
 		yield fuse.Direntry( '..' )
