@@ -50,6 +50,57 @@ class PressFS {
 		}
 	}
 
+	public function call_get_post( $post_id = FALSE ) {
+		if (
+			$post_id == FALSE
+			&& !empty( $_GET['post_id'] )
+		) {
+			$post_id = (int) $_GET['post_id'];
+		}
+
+		$p = get_post( $post_id );
+		$post_url = get_permalink( $p->ID );
+
+		$this->data['post'] = array(
+			'id'			=> $p->ID,
+			'date_gmt'		=> $p->post_date_gmt,
+			'content'		=> $p->post_content,
+			'title'			=> $p->post_title,
+			'status'		=> $p->post_status,
+			'password'		=> $p->post_password,
+			'type'			=> $p->post_type,
+			'url'			=> $post_url,
+			'slug'			=> $p->post_name
+		);
+	}
+
+	public function call_get_post_list() {
+		$post_total = 0;
+		foreach ( (array) wp_count_posts() as $type => $count ) {
+			$post_total += $count;
+		}
+
+		$posts = (array) get_posts( array (
+			'numberposts'	=> $post_total
+		) );
+
+		foreach ( $posts as $p ) {
+			$post_url = get_permalink( $p->ID );
+
+			$this->data['posts'][$p->ID] = array(
+				'id'			=> $p->ID,
+				'date_gmt'		=> $p->post_date_gmt,
+				'content'		=> $p->post_content,
+				'title'			=> $p->post_title,
+				'status'		=> $p->post_status,
+				'password'		=> $p->post_password,
+				'type'			=> $p->post_type,
+				'url'			=> $post_url,
+				'slug'			=> $p->post_name
+			);
+		}
+	}
+
 	public function init() {
 		if ( 
 			!empty( $_GET['pressfs'] )
