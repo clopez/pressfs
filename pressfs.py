@@ -78,6 +78,16 @@ class PressFS( fuse.Fuse ) :
 			st.dir()
 			return st
 
+		match = re.match( '/users/(.*?)/(.*)', path )
+		if ( match ) :
+			users = self.wp_request( 'get_user_list' )['users']
+			user = users[match.group(1)]
+			when = time.strptime( user['registered'], '%Y-%m-%d %H:%M:%S' )
+
+			st.size( len( user[match.group(2)] ) )
+			st.time( time.mktime( when ) )
+			return st
+
 		match = re.match( '/users/(.*)', path )
 		if ( match ) :
 			users = self.wp_request( 'get_user_list' )['users']
@@ -102,6 +112,14 @@ class PressFS( fuse.Fuse ) :
 			users = self.wp_request( 'get_user_list' )['users']
 			for ( u ) in users :
 				yield fuse.Direntry( u )
+			return
+
+		match = re.match( '/users/(.*)', path )
+		if ( match ) :
+			users = self.wp_request( 'get_user_list' )['users']
+			user = users[ match.group(1) ]
+			for ( attr ) in user :
+				yield fuse.Direntry( attr )
 			return
 
 	def wp_request( self, action ) :
