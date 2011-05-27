@@ -74,24 +74,40 @@ class PressFS( fuse.Fuse ) :
 			st.dir()
 			return st
 
+		if ( path == '/posts' ) :
+			st.dir()
+			return st
+
 		if ( path == '/users' ) :
 			st.dir()
 			return st
 
+		# POSTS
+		match = re.match( '/posts/(\d+)-(.*)', path )
+		if ( match ) :
+			posts = self.wp_request( 'get_post_list' )['posts']
+			post = posts[ match.group( 1 ) ]
+			when = time.strptime( post['date_gmt'], '%Y-%m-%d %H:%M:%S' )
+
+			st.dir()
+			st.time( time.mktime( when ) )
+			return st
+
+		# USERS
 		match = re.match( '/users/(.*?)/(.*)', path )
 		if ( match ) :
 			users = self.wp_request( 'get_user_list' )['users']
-			user = users[match.group(1)]
+			user = users[ match.group( 1 ) ]
 			when = time.strptime( user['registered'], '%Y-%m-%d %H:%M:%S' )
 
-			st.size( len( user[match.group(2)] ) )
+			st.size( len( user[ match.group( 2 ) ] ) )
 			st.time( time.mktime( when ) )
 			return st
 
 		match = re.match( '/users/(.*)', path )
 		if ( match ) :
 			users = self.wp_request( 'get_user_list' )['users']
-			user = users[match.group(1)]
+			user = users[ match.group( 1 ) ]
 			when = time.strptime( user['registered'], '%Y-%m-%d %H:%M:%S' )
 
 			st.dir()
@@ -128,6 +144,13 @@ class PressFS( fuse.Fuse ) :
 
 		if ( path == '/' ) :
 			yield fuse.Direntry( 'users' )
+			yield fuse.Direntry( 'posts' )
+			return
+
+		if ( path == '/posts' ) :
+			posts = self.wp_request( 'get_post_list' )['posts']
+			for ( p ) in posts :
+				yield fuse.Direntry( p + '-' + posts[p]['slug'] )
 			return
 
 		if ( path == '/users' ) :
