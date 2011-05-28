@@ -78,6 +78,10 @@ class PressFS( fuse.Fuse ) :
 			st.dir()
 			return st
 
+		if ( path == '/tags' ) :
+			st.dir()
+			return st
+
 		if ( path == '/users' ) :
 			st.dir()
 			return st
@@ -103,6 +107,12 @@ class PressFS( fuse.Fuse ) :
 
 			st.dir()
 			st.time( time.mktime( when ) )
+			return st
+
+		# TAGS
+		match = re.match( '/tags/(.*)', path )
+		if ( match ) :
+			st.dir()
 			return st
 
 		# USERS
@@ -165,8 +175,10 @@ class PressFS( fuse.Fuse ) :
 		if ( path == '/' ) :
 			yield fuse.Direntry( 'users' )
 			yield fuse.Direntry( 'posts' )
+			yield fuse.Direntry( 'tags' )
 			return
 
+		# POSTS
 		if ( path == '/posts' ) :
 			posts = self.wp_request( 'get_post_list' )['posts']
 			for ( p ) in posts :
@@ -183,6 +195,14 @@ class PressFS( fuse.Fuse ) :
 				yield fuse.Direntry( attr )
 			return
 
+		# TAGS
+		if ( path == '/tags' ) :
+			tags = self.wp_request( 'get_tag_list' )['tags']
+			for ( t ) in tags :
+				yield fuse.Direntry( tags[t]['name'] )
+			return
+
+		# USERS
 		if ( path == '/users' ) :
 			users = self.wp_request( 'get_user_list' )['users']
 			for ( u ) in users :
