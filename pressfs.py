@@ -83,6 +83,18 @@ class PressFS( fuse.Fuse ) :
 			return st
 
 		# POSTS
+		match = re.match( '/posts/(\d+)-(.*?)/(.*)', path )
+		if ( match ) :
+			post = self.wp_request(
+				'get_post',
+				get_vars = { 'post_id' : match.group( 1 ) }
+			)['post']
+
+			when = time.strptime( post['date_gmt'], '%Y-%m-%d %H:%M:%S' )
+			st.time( time.mktime( when ) )
+			st.size( len( str( post[ match.group( 3 ) ] ) ) )
+			return st
+
 		match = re.match( '/posts/(\d+)-(.*)', path )
 		if ( match ) :
 			posts = self.wp_request( 'get_post_list' )['posts']
@@ -125,7 +137,15 @@ class PressFS( fuse.Fuse ) :
 			user = users[ match.group( 1 ) ]
 			data = user[ match.group( 2 ) ]
 
-		return self.read_data( data, size, offset )
+		match = re.match( '/posts/(\d+)-(.*?)/(.*)', path )
+		if ( match ) :
+			post = self.wp_request(
+				'get_post',
+				get_vars = { 'post_id' : match.group( 1 ) }
+			)['post']
+			data = post[ match.group( 3 ) ]
+			
+		return self.read_data( str( data ), size, offset )
 
 	def read_data( self, data, size, offset ) :
 		slen = len( data )
@@ -153,6 +173,16 @@ class PressFS( fuse.Fuse ) :
 				yield fuse.Direntry( p + '-' + posts[p]['slug'] )
 			return
 
+		match = re.match( '/posts/(\d+)-(.*)', path )
+		if ( match ) :
+			post = self.wp_request(
+				'get_post',
+				get_vars = { 'post_id' : match.group( 1 ) }
+			)['post']
+			for ( attr ) in post :
+				yield fuse.Direntry( attr )
+			return
+
 		if ( path == '/users' ) :
 			users = self.wp_request( 'get_user_list' )['users']
 			for ( u ) in users :
@@ -167,8 +197,11 @@ class PressFS( fuse.Fuse ) :
 				yield fuse.Direntry( attr )
 			return
 
-	def wp_request( self, action ) :
+	def wp_request( self, action, get_vars = {} ) :
 		req_url = self.wp_url + '&call=' + action
+		for ( g ) in get_vars :
+			req_url += '&' + g + '=' + get_vars[g]
+
 		now = calendar.timegm( time.gmtime() )
 
 		# check the cache first
