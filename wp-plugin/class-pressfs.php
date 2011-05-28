@@ -34,18 +34,14 @@ class PressFS {
 		return $user;
 	}
 
-	public function call_get_user_list() {
-		$users = (array) get_users();
-
-		foreach ( $users as $u ) {
-			$this->data['users'][$u->user_login] = array(
-				'id'			=> $u->ID,
-				'login'			=> $u->user_login,
-				'nice_name'		=> $u->user_nicename,
-				'email'			=> $u->user_email,
-				'url'			=> $u->user_url,
-				'registered'	=> $u->user_registered,
-				'display_name'	=> $u->display_name
+	public function call_get_tag_list() {
+		foreach ( (array) get_tags() as $t ) {
+			$this->data['tags'][$t->term_id] = array(
+				'id'			=> $t->term_id,
+				'name'			=> $t->name,
+				'slug'			=> $t->slug,
+				'description'	=> $t->description,
+				'count'			=> $t->count
 			);
 		}
 	}
@@ -97,6 +93,22 @@ class PressFS {
 				'type'			=> $p->post_type,
 				'url'			=> $post_url,
 				'slug'			=> $p->post_name
+			);
+		}
+	}
+
+	public function call_get_user_list() {
+		$users = (array) get_users();
+
+		foreach ( $users as $u ) {
+			$this->data['users'][$u->user_login] = array(
+				'id'			=> $u->ID,
+				'login'			=> $u->user_login,
+				'nice_name'		=> $u->user_nicename,
+				'email'			=> $u->user_email,
+				'url'			=> $u->user_url,
+				'registered'	=> $u->user_registered,
+				'display_name'	=> $u->display_name
 			);
 		}
 	}
