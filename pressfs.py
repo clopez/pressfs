@@ -74,19 +74,11 @@ class PressFS( fuse.Fuse ) :
 			st.dir()
 			return st
 
+		# POSTS
 		if ( path == '/posts' ) :
 			st.dir()
 			return st
 
-		if ( path == '/tags' ) :
-			st.dir()
-			return st
-
-		if ( path == '/users' ) :
-			st.dir()
-			return st
-
-		# POSTS
 		match = re.match( '/posts/(\d+)-(.*?)/(.*)', path )
 		if ( match ) :
 			post = self.wp_request(
@@ -110,12 +102,28 @@ class PressFS( fuse.Fuse ) :
 			return st
 
 		# TAGS
+		if ( path == '/tags' ) :
+			st.dir()
+			return st
+
+		match = re.match( '/tags/(.*?)/(.*)', path )
+		if ( match ) :
+			tags = self.wp_request( 'get_tag_list' )['tags']
+			for ( tag_id ) in tags :
+				if ( tags[tag_id]['name'] == match.group( 1 ) ) :
+					st.size( len( str( tags[tag_id][ match.group( 2 ) ] ) ) )
+					return st
+
 		match = re.match( '/tags/(.*)', path )
 		if ( match ) :
 			st.dir()
 			return st
 
 		# USERS
+		if ( path == '/users' ) :
+			st.dir()
+			return st
+
 		match = re.match( '/users/(.*?)/(.*)', path )
 		if ( match ) :
 			users = self.wp_request( 'get_user_list' )['users']
@@ -141,12 +149,7 @@ class PressFS( fuse.Fuse ) :
 	def read( self, path, size, offset ) :
 		data = ''
 
-		match = re.match( '/users/(.*?)/(.*)', path )
-		if ( match ) :
-			users = self.wp_request( 'get_user_list' )['users']
-			user = users[ match.group( 1 ) ]
-			data = user[ match.group( 2 ) ]
-
+		# POSTS
 		match = re.match( '/posts/(\d+)-(.*?)/(.*)', path )
 		if ( match ) :
 			post = self.wp_request(
@@ -154,8 +157,24 @@ class PressFS( fuse.Fuse ) :
 				get_vars = { 'post_id' : match.group( 1 ) }
 			)['post']
 			data = post[ match.group( 3 ) ]
-			
-		return self.read_data( str( data ), size, offset )
+			return self.read_data( str( data ), size, offset )
+
+		# TAGS
+		match = re.match( '/tags/(.*?)/(.*)', path )
+		if ( match ) :
+			tags = self.wp_request( 'get_tag_list' )['tags']
+			for ( tag_id ) in tags :
+				if ( tags[tag_id]['name'] == match.group( 1 ) ) :
+					data = tags[tag_id][ match.group( 2 ) ]
+					return self.read_data( str( data ), size, offset )
+
+		# USERS
+		match = re.match( '/users/(.*?)/(.*)', path )
+		if ( match ) :
+			users = self.wp_request( 'get_user_list' )['users']
+			user = users[ match.group( 1 ) ]
+			data = user[ match.group( 2 ) ]
+			return self.read_data( str( data ), size, offset )
 
 	def read_data( self, data, size, offset ) :
 		slen = len( data )
@@ -201,6 +220,15 @@ class PressFS( fuse.Fuse ) :
 			for ( t ) in tags :
 				yield fuse.Direntry( tags[t]['name'] )
 			return
+
+		match = re.match( '/tags/(.*)', path )
+		if ( match ) :
+			tags = self.wp_request( 'get_tag_list' )['tags']
+			for ( tag_id ) in tags :
+				if ( tags[tag_id]['name'] == match.group( 1 ) ) :
+					for ( t ) in tags[tag_id] :
+						yield fuse.Direntry( t )
+					return
 
 		# USERS
 		if ( path == '/users' ) :
