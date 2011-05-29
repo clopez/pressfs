@@ -34,18 +34,6 @@ class PressFS {
 		return $user;
 	}
 
-	public function call_get_tag_list() {
-		foreach ( (array) get_tags() as $t ) {
-			$this->data['tags'][$t->term_id] = array(
-				'id'			=> $t->term_id,
-				'name'			=> $t->name,
-				'slug'			=> $t->slug,
-				'description'	=> $t->description,
-				'count'			=> $t->count
-			);
-		}
-	}
-
 	public function call_get_post( $post_id = FALSE ) {
 		if (
 			$post_id == FALSE
@@ -93,6 +81,18 @@ class PressFS {
 				'type'			=> $p->post_type,
 				'url'			=> $post_url,
 				'slug'			=> $p->post_name
+			);
+		}
+	}
+
+	public function call_get_tag_list() {
+		foreach ( (array) get_tags() as $t ) {
+			$this->data['tags'][$t->term_id] = array(
+				'id'			=> $t->term_id,
+				'name'			=> $t->name,
+				'slug'			=> $t->slug,
+				'description'	=> $t->description,
+				'count'			=> $t->count
 			);
 		}
 	}
