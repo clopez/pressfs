@@ -110,11 +110,29 @@ class PressFS( fuse.Fuse ) :
 		if ( match ) :
 			tags = self.wp_request( 'get_tag_list' )['tags']
 			for ( tag_id ) in tags :
-				if ( tags[tag_id]['name'] == match.group( 1 ) ) :
+				if ( tags[tag_id]['slug'] == match.group( 1 ) ) :
 					st.size( len( str( tags[tag_id][ match.group( 2 ) ] ) ) )
 					return st
 
 		match = re.match( '/tags/(.*)', path )
+		if ( match ) :
+			st.dir()
+			return st
+
+		# CATEGORIES
+		if ( path == '/categories' ) :
+			st.dir()
+			return st
+	
+		match = re.match( '/categories/(.*?)/(.*)', path )
+		if ( match ) :
+			cats = self.wp_request( 'get_category_list' )['categories']
+			for ( cat_id ) in cats :
+				if ( cats[cat_id]['slug'] == match.group( 1 ) ) :
+					st.size( len( str( cats[cat_id][ match.group( 2 ) ] ) ) )
+					return st
+
+		match = re.match( '/categories/(.*)', path )
 		if ( match ) :
 			st.dir()
 			return st
@@ -164,8 +182,17 @@ class PressFS( fuse.Fuse ) :
 		if ( match ) :
 			tags = self.wp_request( 'get_tag_list' )['tags']
 			for ( tag_id ) in tags :
-				if ( tags[tag_id]['name'] == match.group( 1 ) ) :
+				if ( tags[tag_id]['slug'] == match.group( 1 ) ) :
 					data = tags[tag_id][ match.group( 2 ) ]
+					return self.read_data( str( data ), size, offset )
+
+		# CATEGORIES
+		match = re.match( '/categories/(.*?)/(.*)', path )
+		if ( match ) :
+			cats = self.wp_request( 'get_category_list' )['categories']
+			for ( cat_id ) in cats :
+				if ( cats[cat_id]['slug'] == match.group( 1 ) ) :
+					data = cats[cat_id][ match.group( 2 ) ]
 					return self.read_data( str( data ), size, offset )
 
 		# USERS
@@ -195,6 +222,7 @@ class PressFS( fuse.Fuse ) :
 			yield fuse.Direntry( 'users' )
 			yield fuse.Direntry( 'posts' )
 			yield fuse.Direntry( 'tags' )
+			yield fuse.Direntry( 'categories' )
 			return
 
 		# POSTS
@@ -218,16 +246,32 @@ class PressFS( fuse.Fuse ) :
 		if ( path == '/tags' ) :
 			tags = self.wp_request( 'get_tag_list' )['tags']
 			for ( t ) in tags :
-				yield fuse.Direntry( tags[t]['name'] )
+				yield fuse.Direntry( tags[t]['slug'] )
 			return
 
 		match = re.match( '/tags/(.*)', path )
 		if ( match ) :
 			tags = self.wp_request( 'get_tag_list' )['tags']
 			for ( tag_id ) in tags :
-				if ( tags[tag_id]['name'] == match.group( 1 ) ) :
+				if ( tags[tag_id]['slug'] == match.group( 1 ) ) :
 					for ( t ) in tags[tag_id] :
 						yield fuse.Direntry( t )
+					return
+
+		# CATEGORIES
+		if ( path == '/categories' ) :
+			cats = self.wp_request( 'get_category_list' )['categories']
+			for ( c ) in cats :
+				yield fuse.Direntry( cats[c]['slug'] )
+			return
+
+		match = re.match( '/categories/(.*)', path )
+		if ( match ) :
+			cats = self.wp_request( 'get_category_list' )['categories']
+			for ( cat_id ) in cats :
+				if ( cats[cat_id]['slug'] == match.group( 1 ) ) :
+					for ( c ) in cats[cat_id] :
+						yield fuse.Direntry( c )
 					return
 
 		# USERS
