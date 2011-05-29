@@ -34,6 +34,30 @@ class PressFS {
 		return $user;
 	}
 
+	public function call_get_category_list() {
+		$cats = (array) get_categories( array(
+			'hierarchical'		=> FALSE,
+			'hide_empty'		=> FALSE
+		) );
+
+		foreach ( $cats as $c ) {
+			$parent = '';
+			if ( $c->parent != 0 ) {
+				$cat_parent = get_category( $c->parent );
+				$parent = $cat_parent->name;
+			}
+
+			$this->data['categories'][$c->term_id] = array(
+				'id'			=> $c->term_id,
+				'name'			=> $c->name,
+				'slug'			=> $c->slug,
+				'description'	=> $c->description,
+				'count'			=> $c->count,
+				'parent'		=> $parent
+			);
+		}
+	}
+
 	public function call_get_post( $post_id = FALSE ) {
 		if (
 			$post_id == FALSE
