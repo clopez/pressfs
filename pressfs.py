@@ -86,8 +86,10 @@ class PressFS( fuse.Fuse ) :
 				get_vars = { 'post_id' : match.group( 1 ) }
 			)['post']
 
-			when = time.strptime( post['date_gmt'], '%Y-%m-%d %H:%M:%S' )
-			st.time( time.mktime( when ) )
+			if ( post['date_gmt'] != '0000-00-00 00:00:00' ) :
+				when = time.strptime( post['date_gmt'], '%Y-%m-%d %H:%M:%S' )
+				st.time( time.mktime( when ) )
+
 			st.size( len( str( post[ match.group( 3 ) ] ) ) )
 			return st
 
@@ -95,10 +97,12 @@ class PressFS( fuse.Fuse ) :
 		if ( match ) :
 			posts = self.wp_request( 'get_post_list' )['posts']
 			post = posts[ match.group( 1 ) ]
-			when = time.strptime( post['date_gmt'], '%Y-%m-%d %H:%M:%S' )
+
+			if ( post['date_gmt'] != '0000-00-00 00:00:00' ) :
+				when = time.strptime( post['date_gmt'], '%Y-%m-%d %H:%M:%S' )
+				st.time( time.mktime( when ) )
 
 			st.dir()
-			st.time( time.mktime( when ) )
 			return st
 
 		# TAGS
@@ -228,8 +232,11 @@ class PressFS( fuse.Fuse ) :
 		# POSTS
 		if ( path == '/posts' ) :
 			posts = self.wp_request( 'get_post_list' )['posts']
-			for ( p ) in posts :
-				yield fuse.Direntry( p + '-' + posts[p]['slug'] )
+			for ( p ) in posts.keys() :
+				if ( posts[p]['name'] != '' ) :
+					yield fuse.Direntry( p + '-' + posts[p]['name'] )
+				else :
+					yield fuse.Direntry( p + '-' + posts[p]['title'] )
 			return
 
 		match = re.match( '/posts/(\d+)-(.*)', path )
