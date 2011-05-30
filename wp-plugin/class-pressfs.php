@@ -58,6 +58,34 @@ class PressFS {
 		}
 	}
 
+	public function call_get_page_list() {
+		$pages = (array) get_pages( array (
+			'hierarchical'		=> FALSE
+		) );
+
+		foreach ( $pages as $p ) {
+			$page_url = get_permalink( $p->ID );
+
+			$parent = '';
+			if ( $p->post_parent != 0 ) {
+				$page_parent = get_page( $p->post_parent );
+				$parent = "{$p->ID}-{$page_parent->title}";
+			}
+
+			$this->data['pages'][$p->ID] = array(
+				'id'			=> $p->ID,
+				'date_gmt'		=> $p->post_date_gmt,
+				'title'			=> $p->post_title,
+				'status'		=> $p->post_status,
+				'password'		=> $p->post_password,
+				'type'			=> $p->post_type,
+				'url'			=> $page_url,
+				'name'			=> $p->post_name,
+				'parent'		=> $parent
+			);
+		}
+	}
+
 	public function call_get_post( $post_id = FALSE ) {
 		if (
 			$post_id == FALSE
@@ -78,7 +106,7 @@ class PressFS {
 			'password'		=> $p->post_password,
 			'type'			=> $p->post_type,
 			'url'			=> $post_url,
-			'slug'			=> $p->post_name
+			'name'			=> $p->post_name
 		);
 	}
 
@@ -89,7 +117,8 @@ class PressFS {
 		}
 
 		$posts = (array) get_posts( array (
-			'numberposts'	=> $post_total
+			'numberposts'	=> $post_total,
+			'post_status'	=> 'any'
 		) );
 
 		foreach ( $posts as $p ) {
@@ -98,13 +127,12 @@ class PressFS {
 			$this->data['posts'][$p->ID] = array(
 				'id'			=> $p->ID,
 				'date_gmt'		=> $p->post_date_gmt,
-				'content'		=> $p->post_content,
 				'title'			=> $p->post_title,
 				'status'		=> $p->post_status,
 				'password'		=> $p->post_password,
 				'type'			=> $p->post_type,
 				'url'			=> $post_url,
-				'slug'			=> $p->post_name
+				'name'			=> $p->post_name
 			);
 		}
 	}
