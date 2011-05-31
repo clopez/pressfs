@@ -9,6 +9,8 @@ Author URI: http://josephscott.org/
 License: MIT
  */
 
+define( 'PRESSFS_VERSION', '0.1.0' );
+
 if ( !class_exists( 'PressFS' ) ) {
 	require dirname( __FILE__ ) . '/class-pressfs.php';
 }
