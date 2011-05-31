@@ -107,8 +107,8 @@ class PressFS( fuse.Fuse ) :
 				get_vars = { 'post_id' : match.group( 1 ) }
 			)['post']
 
-			if ( post['date_gmt'] != '0000-00-00 00:00:00' ) :
-				when = time.strptime( post['date_gmt'], '%Y-%m-%d %H:%M:%S' )
+			if ( post['date-gmt'] != '0000-00-00 00:00:00' ) :
+				when = time.strptime( post['date-gmt'], '%Y-%m-%d %H:%M:%S' )
 				st.time( time.mktime( when ) )
 
 			st.size( len( str( post[ match.group( 3 ) ] ) ) )
@@ -119,8 +119,8 @@ class PressFS( fuse.Fuse ) :
 			posts = self.wp_request( 'get_post_list' )['posts']
 			post = posts[ match.group( 1 ) ]
 
-			if ( post['date_gmt'] != '0000-00-00 00:00:00' ) :
-				when = time.strptime( post['date_gmt'], '%Y-%m-%d %H:%M:%S' )
+			if ( post['date-gmt'] != '0000-00-00 00:00:00' ) :
+				when = time.strptime( post['date-gmt'], '%Y-%m-%d %H:%M:%S' )
 				st.time( time.mktime( when ) )
 
 			st.dir()

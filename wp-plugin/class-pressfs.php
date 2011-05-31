@@ -74,7 +74,7 @@ class PressFS {
 
 			$this->data['pages'][$p->ID] = array(
 				'id'			=> $p->ID,
-				'date_gmt'		=> $p->post_date_gmt,
+				'date-gmt'		=> $p->post_date_gmt,
 				'title'			=> $p->post_title,
 				'status'		=> $p->post_status,
 				'password'		=> $p->post_password,
@@ -99,7 +99,7 @@ class PressFS {
 
 		$this->data['post'] = array(
 			'id'			=> $p->ID,
-			'date_gmt'		=> $p->post_date_gmt,
+			'date-gmt'		=> $p->post_date_gmt,
 			'content'		=> $p->post_content,
 			'title'			=> $p->post_title,
 			'status'		=> $p->post_status,
@@ -126,7 +126,7 @@ class PressFS {
 
 			$this->data['posts'][$p->ID] = array(
 				'id'			=> $p->ID,
-				'date_gmt'		=> $p->post_date_gmt,
+				'date-gmt'		=> $p->post_date_gmt,
 				'title'			=> $p->post_title,
 				'status'		=> $p->post_status,
 				'password'		=> $p->post_password,
@@ -156,11 +156,11 @@ class PressFS {
 			$this->data['users'][$u->user_login] = array(
 				'id'			=> $u->ID,
 				'login'			=> $u->user_login,
-				'nice_name'		=> $u->user_nicename,
+				'nice-name'		=> $u->user_nicename,
 				'email'			=> $u->user_email,
 				'url'			=> $u->user_url,
 				'registered'	=> $u->user_registered,
-				'display_name'	=> $u->display_name
+				'display-name'	=> $u->display_name
 			);
 		}
 	}
