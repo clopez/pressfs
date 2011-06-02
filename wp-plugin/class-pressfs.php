@@ -86,18 +86,20 @@ class PressFS {
 		}
 	}
 
-	public function call_get_post( $post_id = FALSE ) {
-		if (
-			$post_id == FALSE
-			&& !empty( $_GET['post_id'] )
-		) {
+	public function call_get_post( $arg_post_id = FALSE ) {
+		$post_id = 0;
+		if ( !empty( $_GET['post_id'] ) ) {
 			$post_id = (int) $_GET['post_id'];
+		}
+
+		if ( $arg_post_id != FALSE ) {
+			$post_id = (int) $arg_post_id;
 		}
 
 		$p = get_post( $post_id );
 		$post_url = get_permalink( $p->ID );
 
-		$this->data['post'] = array(
+		$post_data = array(
 			'id'			=> $p->ID,
 			'date-gmt'		=> $p->post_date_gmt,
 			'content'		=> $p->post_content,
@@ -106,8 +108,11 @@ class PressFS {
 			'password'		=> $p->post_password,
 			'type'			=> $p->post_type,
 			'url'			=> $post_url,
-			'name'			=> $p->post_name
+			'name'			=> $p->post_name,
 		);
+
+		$this->data['post'] = $post_data;
+		return $post_data;
 	}
 
 	public function call_get_post_list() {
@@ -122,18 +127,7 @@ class PressFS {
 		) );
 
 		foreach ( $posts as $p ) {
-			$post_url = get_permalink( $p->ID );
-
-			$this->data['posts'][$p->ID] = array(
-				'id'			=> $p->ID,
-				'date-gmt'		=> $p->post_date_gmt,
-				'title'			=> $p->post_title,
-				'status'		=> $p->post_status,
-				'password'		=> $p->post_password,
-				'type'			=> $p->post_type,
-				'url'			=> $post_url,
-				'name'			=> $p->post_name
-			);
+			$this->data['posts'][$p->ID] = $this->call_get_post( $p->ID );
 		}
 	}
 
