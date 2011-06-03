@@ -106,6 +106,14 @@ class PressFS {
 		}
 		$tags = substr( $tags, 0, -2 );
 
+		$cats = '';
+		$post_cats = (array) wp_get_post_categories( $p-> ID );
+		foreach ( $post_cats as $c ) {
+			$c = get_category( $c );
+			$cats .= "{$c->name}, ";
+		}
+		$cats = substr( $cats, 0, -2 );
+
 		$post_data = array(
 			'id'			=> $p->ID,
 			'date-gmt'		=> $p->post_date_gmt,
@@ -117,6 +125,7 @@ class PressFS {
 			'url'			=> $post_url,
 			'name'			=> $p->post_name,
 			'tags'			=> $tags,
+			'categories'	=> $cats,
 		);
 
 		$this->data['post'] = $post_data;
