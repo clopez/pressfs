@@ -99,6 +99,13 @@ class PressFS {
 		$p = get_post( $post_id );
 		$post_url = get_permalink( $p->ID );
 
+		$tags = '';
+		$post_tags = (array) wp_get_post_tags( $p->ID );
+		foreach ( $post_tags as $t ) {
+			$tags .= "{$t->name}, ";
+		}
+		$tags = substr( $tags, 0, -2 );
+
 		$post_data = array(
 			'id'			=> $p->ID,
 			'date-gmt'		=> $p->post_date_gmt,
@@ -109,6 +116,7 @@ class PressFS {
 			'type'			=> $p->post_type,
 			'url'			=> $post_url,
 			'name'			=> $p->post_name,
+			'tags'			=> $tags,
 		);
 
 		$this->data['post'] = $post_data;
