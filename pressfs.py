@@ -109,7 +109,8 @@ class PressFS( fuse.Fuse ) :
 				when = time.strptime( post['date-gmt'], '%Y-%m-%d %H:%M:%S' )
 				st.time( time.mktime( when ) )
 
-			st.size( len( str( post[ match.group( 3 ) ] ) ) )
+			if ( post[ match.group( 3 ) ] ) :
+				st.size( len( str( post[ match.group( 3 ) ] ) ) )
 			return st
 
 		match = re.match( '/posts/(\d+)-(.*)', path )
