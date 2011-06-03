@@ -102,10 +102,8 @@ class PressFS( fuse.Fuse ) :
 
 		match = re.match( '/posts/(\d+)-(.*?)/(.*)', path )
 		if ( match ) :
-			post = self.wp_request(
-				'get_post',
-				get_vars = { 'post_id' : match.group( 1 ) }
-			)['post']
+			post = self.wp_request( 'get_post_list' )['posts']
+			post = post[ match.group( 1 ) ]
 
 			if ( post['date-gmt'] != '0000-00-00 00:00:00' ) :
 				when = time.strptime( post['date-gmt'], '%Y-%m-%d %H:%M:%S' )
@@ -195,10 +193,9 @@ class PressFS( fuse.Fuse ) :
 		# POSTS
 		match = re.match( '/posts/(\d+)-(.*?)/(.*)', path )
 		if ( match ) :
-			post = self.wp_request(
-				'get_post',
-				get_vars = { 'post_id' : match.group( 1 ) }
-			)['post']
+			post = self.wp_request( 'get_post_list' )['posts']
+			post = post[ match.group( 1 ) ]
+
 			data = post[ match.group( 3 ) ]
 			return self.read_data( str( data ), size, offset )
 
@@ -262,10 +259,9 @@ class PressFS( fuse.Fuse ) :
 
 		match = re.match( '/posts/(\d+)-(.*)', path )
 		if ( match ) :
-			post = self.wp_request(
-				'get_post',
-				get_vars = { 'post_id' : match.group( 1 ) }
-			)['post']
+			post = self.wp_request( 'get_post_list' )['posts']
+			post = post[ match.group( 1 ) ]
+
 			for ( attr ) in post :
 				yield fuse.Direntry( attr )
 			return
