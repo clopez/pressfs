@@ -38,6 +38,7 @@ import simplejson
 import stat
 import sys
 import time
+import urllib
 
 fuse.fuse_python_api = ( 0, 2 )
 
@@ -314,7 +315,7 @@ class PressFS( fuse.Fuse ) :
 				yield fuse.Direntry( attr )
 			return
 
-	def wp_request( self, action, get_vars = {} ) :
+	def wp_request( self, action, get_vars = {}, post_vars = {} ) :
 		req_url = self.wp_url + '&call=' + action
 		for ( g ) in get_vars :
 			req_url += '&' + g + '=' + get_vars[g]
@@ -336,7 +337,8 @@ class PressFS( fuse.Fuse ) :
 
 		req_headers = {
 			'Authorization' : 'Basic ' + req_auth,
-			'User-Agent' : 'PressFS/' + self.version
+			'User-Agent' : 'PressFS/' + self.version,
+			'Content-Type' : 'application/x-www-form-urlencoded'
 		}
 
 		print ">> WP REQUEST : " + req_url
@@ -344,6 +346,7 @@ class PressFS( fuse.Fuse ) :
 		resp, content = http.request(
 			req_url,
 			'POST',
+			urllib.urlencode( post_vars ),
 			headers = req_headers
 		)
 
