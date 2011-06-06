@@ -176,6 +176,23 @@ class PressFS {
 		}
 	}
 
+	public function call_update_post() {
+		if ( empty( $_POST['id'] ) ) {
+			$this->send_error( 'Post ID value is required.' );
+			return;
+		}
+		errlog( $_POST );
+
+		$post = get_post( $_POST['id'], ARRAY_A );
+		$post['post_content'] = $_POST['content'];
+
+		$post_id = wp_update_post( $post );
+		errlog( $post_id );
+		if ( $post_id == 0 ) {
+			$this->send_error( 'Error updating post' );
+		}
+	}
+
 	public function init() {
 		if ( 
 			!empty( $_GET['pressfs'] )
