@@ -61,6 +61,9 @@ class PressFS_Stat( fuse.Stat ) :
 		self.st_mode = stat.S_IFDIR | mode
 		self.st_nlink = 2
 
+	def file_mode( self, mode = 0400 ) :
+		self.st_mode = stat.S_IFREG | mode
+
 	def size( self, size ) :
 		self.st_size = size
 
@@ -88,6 +91,8 @@ class PressFS( fuse.Fuse ) :
 		self.req_expire = self.config.getint( 'Cache', 'req_expire' )
 
 		self.req_cache = { }
+		self.open_files = { }
+		self.write_files = { }
 
 	def getattr( self, path ) :
 		st = PressFS_Stat()
@@ -112,6 +117,10 @@ class PressFS( fuse.Fuse ) :
 
 			if ( post[ match.group( 3 ) ] ) :
 				st.size( len( str( post[ match.group( 3 ) ] ) ) )
+
+			if ( match.group( 3 ) == 'content' ) :
+				st.file_mode( 0600 )
+
 			return st
 
 		match = re.match( '/posts/(\d+)-(.*)', path )
@@ -188,6 +197,24 @@ class PressFS( fuse.Fuse ) :
 			return st
 
 		return -errno.ENOENT
+
+	def open( self, path, flags ) :
+		print ">> OPEN : " + path
+		print flags
+		data = ''
+
+		match = re.match( '/posts/(\d+)-(.*?)/(.*)', path )
+		if ( match ) :
+			post = self.wp_request( 'get_post_list' )['posts']
+			post = post[ match.group( 1 ) ]
+			data = post['content']
+		
+		self.open_files[path] = time.gmtime()
+		self.write_files[path] = {
+			'size'	: len( data ),
+			'data'	: data
+		}
+		return 0
 
 	def read( self, path, size, offset ) :
 		data = ''
@@ -315,6 +342,29 @@ class PressFS( fuse.Fuse ) :
 				yield fuse.Direntry( attr )
 			return
 
+	def release( self, path, flags ) :
+		if ( path ) in self.open_files :
+			del self.open_files[path]
+
+		match = re.match( '/posts/(\d+)-(.*?)/(.*)', path )
+		if ( match ) :
+			post_field = match.group( 3 )
+			post_id = match.group( 1 )
+
+			if ( post_field == 'content' ) :
+				if ( path ) in self.write_files :
+					if ( len( self.write_files[path]['data'] ) > 0 ) :
+						print ">> UPDATE POST : " + path
+
+						self.wp_request(
+							'update_post',
+							post_vars = {
+								'id' : post_id,
+								'content' : self.write_files[path]['data']
+							}
+						)
+						del self.write_files[path]
+
 	def wp_request( self, action, get_vars = {}, post_vars = {} ) :
 		req_url = self.wp_url + '&call=' + action
 		for ( g ) in get_vars :
@@ -356,6 +406,14 @@ class PressFS( fuse.Fuse ) :
 		}
 
 		return self.req_cache[req_url]['data']
+
+	def write( self, path, buf, offset ) :
+		self.write_files[path]['size'] += len( buf )
+
+		new_data = self.write_files[path]['data'][:offset] + buf
+		self.write_files[path]['data'] = new_data
+
+		return len( buf )
 
 if ( __name__ == '__main__' ) :
 	fs = PressFS()
