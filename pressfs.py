@@ -94,6 +94,17 @@ class PressFS( fuse.Fuse ) :
 		self.open_files = { }
 		self.write_files = { }
 
+#	def __getattribute__( self, name ) :
+#		print ">> __GET ATTR : ", name
+#		try:
+#			return object.__getattribute__(self, name)
+#		except AttributeError:
+#			return self._catch_call( name )
+
+#	def _catch_call( self, name ) :
+#		print ">> CATCH : " + name
+###		return lambda: "catched: %s" % name
+
 	def getattr( self, path ) :
 		st = PressFS_Stat()
 
@@ -210,10 +221,14 @@ class PressFS( fuse.Fuse ) :
 			data = post['content']
 		
 		self.open_files[path] = time.gmtime()
-		self.write_files[path] = {
-			'size'	: len( data ),
-			'data'	: data
-		}
+
+		# quick hack to check if the file was opened in read only mode
+		if ( flags != 32768 ) :
+			self.write_files[path] = {
+				'size'	: len( data ),
+				'data'	: data
+			}
+
 		return 0
 
 	def read( self, path, size, offset ) :
@@ -343,6 +358,8 @@ class PressFS( fuse.Fuse ) :
 			return
 
 	def release( self, path, flags ) :
+		print ">> RELEASE : " + path
+		print flags
 		if ( path ) in self.open_files :
 			del self.open_files[path]
 
@@ -364,6 +381,14 @@ class PressFS( fuse.Fuse ) :
 							}
 						)
 						del self.write_files[path]
+
+	def truncate( self, path, len ) :
+		print ">> TRUNCATE : " + path
+		print len
+
+		if ( path ) in self.write_files :
+			self.write_files[path]['data'] = ''
+			self.write_files[path]['size'] = 0
 
 	def wp_request( self, action, get_vars = {}, post_vars = {} ) :
 		req_url = self.wp_url + '&call=' + action
