@@ -164,6 +164,9 @@ class PressFS {
 		$users = (array) get_users();
 
 		foreach ( $users as $u ) {
+			$first_name = get_user_meta( $u->ID, 'first_name', TRUE );
+			$last_name = get_user_meta( $u->ID, 'last_name', TRUE );
+
 			$this->data['users'][$u->user_login] = array(
 				'id'			=> $u->ID,
 				'login'			=> $u->user_login,
@@ -171,26 +174,56 @@ class PressFS {
 				'email'			=> $u->user_email,
 				'url'			=> $u->user_url,
 				'registered'	=> $u->user_registered,
-				'display-name'	=> $u->display_name
+				'display-name'	=> $u->display_name,
+				'first-name'	=> $first_name,
+				'last-name'		=> $last_name
 			);
 		}
 	}
 
 	public function call_update_post() {
+		$writable = array(
+			'content'		=> 'post_content',
+		);
+
 		if ( empty( $_POST['id'] ) ) {
 			$this->send_error( 'Post ID value is required.' );
 			return;
 		}
-		errlog( $_POST );
 
 		$post = get_post( $_POST['id'], ARRAY_A );
-		$post['post_content'] = $_POST['content'];
+		foreach ( $writable as $field => $wp_field ) {
+			if ( !empty( $_POST[ $field ] ) ) {
+				$post[ $wp_field ] = $_POST[ $field ];
+			}
+		}
 
 		$post_id = wp_update_post( $post );
-		errlog( $post_id );
 		if ( $post_id == 0 ) {
 			$this->send_error( 'Error updating post' );
 		}
+	}
+
+	public function call_update_user() {
+		$writable = array(
+			'url'			=> 'user_url',
+		);
+
+		if ( !empty( $_POST['login'] ) ) {
+			$user = get_user_by( 'login', $_POST['login'] );
+		} else {
+			$this->send_error( 'Unable to find user' );
+			return;
+		}
+
+		$new_data = array( 'ID' => $user->ID );
+		foreach ( $writable as $field => $wp_field ) {
+			if ( !empty( $_POST[ $field ] ) ) {
+				$new_data[ $wp_field ] = $_POST[ $field ];
+			}
+		}
+
+		wp_update_user( $new_data );
 	}
 
 	public function init() {
