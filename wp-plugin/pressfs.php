@@ -3,7 +3,7 @@
 Plugin Name: PressFS
 Plugin URI:
 Description: API for the PressFS filesystem process
-Version: 0.1.0
+Version: 0.2.0
 Author: Joseph Scott
 Author URI: http://josephscott.org/
 License: MIT

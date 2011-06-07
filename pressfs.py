@@ -76,7 +76,7 @@ class PressFS( fuse.Fuse ) :
 	def __init__( self, *args, **kw ) :
 		fuse.Fuse.__init__( self, *args, **kw )
 
-		self.version = '0.1.0'
+		self.version = '0.2.0'
 
 		if ( os.path.isfile( 'config.ini' ) == False ) :
 			print "You need setup config.ini first."
@@ -89,6 +89,12 @@ class PressFS( fuse.Fuse ) :
 		self.wp_username = self.config.get( 'WordPress', 'username' )
 		self.wp_password = self.config.get( 'WordPress', 'password' )
 		self.req_expire = self.config.getint( 'Cache', 'req_expire' )
+
+		self.writable_paths = {
+			'post_content'		: '/(posts)/(\d+)-(.*?)/(content)',
+
+			'user_url'			: '/(users)/(.*?)/(url)',
+		}
 
 		self.req_cache = { }
 		self.open_files = { }
@@ -112,6 +118,11 @@ class PressFS( fuse.Fuse ) :
 			st.dir()
 			return st
 
+		for ( pattern ) in self.writable_paths :
+			if ( re.match( self.writable_paths[pattern], path ) ) :
+				st.file_mode( 0600 )
+				break
+
 		# POSTS
 		if ( path == '/posts' ) :
 			st.dir()
@@ -128,9 +139,6 @@ class PressFS( fuse.Fuse ) :
 
 			if ( post[ match.group( 3 ) ] ) :
 				st.size( len( str( post[ match.group( 3 ) ] ) ) )
-
-			if ( match.group( 3 ) == 'content' ) :
-				st.file_mode( 0600 )
 
 			return st
 
@@ -214,11 +222,13 @@ class PressFS( fuse.Fuse ) :
 		print flags
 		data = ''
 
-		match = re.match( '/posts/(\d+)-(.*?)/(.*)', path )
-		if ( match ) :
-			post = self.wp_request( 'get_post_list' )['posts']
-			post = post[ match.group( 1 ) ]
-			data = post['content']
+		for ( pattern ) in self.writable_paths :
+			write = re.match( self.writable_paths[pattern], path )
+			if ( write ) :
+				if ( write.group( 1 ) == 'posts' ) :
+					post = self.wp_request( 'get_post_list' )['posts']
+					post = post[ write.group( 2 ) ]
+					data = post[ write.group( 4 ) ]
 		
 		self.open_files[path] = time.gmtime()
 
@@ -363,24 +373,37 @@ class PressFS( fuse.Fuse ) :
 		if ( path ) in self.open_files :
 			del self.open_files[path]
 
-		match = re.match( '/posts/(\d+)-(.*?)/(.*)', path )
-		if ( match ) :
-			post_field = match.group( 3 )
-			post_id = match.group( 1 )
+		if ( path ) not in self.write_files :
+			return
 
-			if ( post_field == 'content' ) :
-				if ( path ) in self.write_files :
-					if ( len( self.write_files[path]['data'] ) > 0 ) :
-						print ">> UPDATE POST : " + path
+		for ( pattern ) in self.writable_paths :
+			write = re.match( self.writable_paths[pattern], path )
+			if ( write ) :
+				if ( write.group( 1 ) == 'posts' ) :
+					post_id = write.group( 2 )
+					post_field = write.group( 4 )
 
-						self.wp_request(
-							'update_post',
-							post_vars = {
-								'id' : post_id,
-								'content' : self.write_files[path]['data']
-							}
-						)
-						del self.write_files[path]
+					self.wp_request(
+						'update_post',
+						post_vars = {
+							'id'		: post_id,
+							post_field	: self.write_files[path]['data']
+						}
+					)
+
+				if ( write.group( 1 ) == 'users' ) :
+					user_login = write.group( 2 )
+					user_field = write.group( 3 )
+
+					self.wp_request(
+						'update_user',
+						post_vars = {
+							'login'		: user_login,
+							user_field	: self.write_files[path]['data']
+						}
+					)
+
+				del self.write_files[path]
 
 	def truncate( self, path, len ) :
 		print ">> TRUNCATE : " + path
