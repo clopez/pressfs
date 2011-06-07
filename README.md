@@ -9,3 +9,9 @@
 ## License
 
 License is <a href="http://www.opensource.org/licenses/mit-license.php">MIT</a> style.
+
+## ChangeLog
+
+### 0.2.0 - Mon 6 Jun 2011
+
+- Start adding write support
