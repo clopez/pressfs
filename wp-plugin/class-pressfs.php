@@ -30,7 +30,7 @@ class PressFS {
 			$this->send_error( 'User must have the administrator role.' );
 		}
 
-		wp_set_current_user( $this->ID );
+		wp_set_current_user( $user->ID );
 		return $user;
 	}
 

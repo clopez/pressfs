@@ -12,6 +12,10 @@ License is <a href="http://www.opensource.org/licenses/mit-license.php">MIT</a> 
 
 ## ChangeLog
 
+### 0.2.1 - Mon 13 Jun 2011
+
+- Fix typo in class-pressfs.php (scribu)
+
 ### 0.2.0 - Mon 6 Jun 2011
 
 - Start adding write support
