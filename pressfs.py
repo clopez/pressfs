@@ -123,6 +123,27 @@ class PressFS( fuse.Fuse ) :
 				st.file_mode( 0600 )
 				break
 
+		# MEDIA
+		if ( path == '/media' ) :
+			st.dir()
+			return st
+
+		match = re.match( '/media/(.*?)\.(.*)', path )
+		if ( match ) :
+			media = self.wp_request( 'get_media_list' )['media']
+			for ( m ) in media :
+				if ( media[m]['name'] == match.group( 1 ) ) :
+					print ">> MEDIA : " + match.group( 1 )
+
+					when = time.strptime(
+						media[m]['date-gmt'],
+						'%Y-%m-%d %H:%M:%S'
+					)
+					st.time( time.mktime( when ) )
+					st.size( media[m]['size'] )
+
+					return st
+
 		# POSTS
 		if ( path == '/posts' ) :
 			st.dir()
@@ -244,6 +265,17 @@ class PressFS( fuse.Fuse ) :
 	def read( self, path, size, offset ) :
 		data = ''
 
+		# MEDIA
+		match = re.match( '/media/(.+)\.(\w+)', path )
+		if ( match ) :
+			data = self.wp_request(
+				'get_media_file',
+				{ 'name': match.group( 1 ) },
+				{ },
+				False
+			)
+			return self.read_data( str( data ), size, offset )
+
 		# POSTS
 		match = re.match( '/posts/(\d+)-(.*?)/(.*)', path )
 		if ( match ) :
@@ -295,11 +327,20 @@ class PressFS( fuse.Fuse ) :
 		yield fuse.Direntry( '..' )
 
 		if ( path == '/' ) :
-			yield fuse.Direntry( 'users' )
+			yield fuse.Direntry( 'categories' )
+			yield fuse.Direntry( 'media' )
 			yield fuse.Direntry( 'posts' )
 			yield fuse.Direntry( 'tags' )
-			yield fuse.Direntry( 'categories' )
+			yield fuse.Direntry( 'users' )
 			return
+
+		# MEDIA
+		if ( path == '/media' ) :
+			media = self.wp_request( 'get_media_list' )['media']
+			for ( m ) in media.keys() :
+				print ">> MEDIA ", media[m]
+				media_name = media[m]['name'] + '.' + media[m]['extension']
+				yield fuse.Direntry( media_name )
 
 		# POSTS
 		if ( path == '/posts' ) :
@@ -413,10 +454,11 @@ class PressFS( fuse.Fuse ) :
 			self.write_files[path]['data'] = ''
 			self.write_files[path]['size'] = 0
 
-	def wp_request( self, action, get_vars = {}, post_vars = {} ) :
+	def wp_request( self, action, get_vars = {}, post_vars = {}, json_response = True ) :
 		req_url = self.wp_url + '&call=' + action
 		for ( g ) in get_vars :
-			req_url += '&' + g + '=' + get_vars[g]
+			req_url += '&' + urllib.quote( g ) 
+			req_url	+= '=' + urllib.quote( get_vars[g] )
 
 		now = calendar.timegm( time.gmtime() )
 
@@ -448,8 +490,12 @@ class PressFS( fuse.Fuse ) :
 			headers = req_headers
 		)
 
+		data = content
+		if ( json_response ) :
+			data = simplejson.loads( content )
+
 		self.req_cache[req_url] = {
-			'data'	: simplejson.loads( content ),
+			'data'	: data,
 			'expire': now + self.req_expire
 		}
 

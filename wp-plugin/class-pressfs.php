@@ -58,6 +58,52 @@ class PressFS {
 		}
 	}
 
+	public function call_get_media_file() {
+		# this one is special, returns the raw binary instead of JSON
+
+		if ( empty( $_GET['name'] ) ) {
+			echo '';
+			exit;
+		}
+
+		$media = (array) get_posts( array(
+			'post_type'		=> 'attachment',
+			'name'			=> $_GET['name']
+		) );
+		$media = $media[0];
+
+		$path = get_attached_file( $media->ID );
+		readfile( $path );
+
+		exit;
+	}
+
+	public function call_get_media_list() {
+		$media = (array) get_posts( array(
+			'post_type'		=> 'attachment',
+			'numberposts'	=> -1,
+			'post_status'	=> NULL,
+			'post_parent'	=> NULL
+		) );
+
+		foreach ( $media as $m ) {
+			$file = parse_url( $m->guid );
+			$file = pathinfo( $file['path'] );
+
+			$path = get_attached_file( $m->ID );
+			$size = filesize( $path );
+
+			$this->data['media'][$m->ID] = array(
+				'date-gmt'	=> $m->post_date_gmt,
+				'extension'	=> $file['extension'],
+				'id'		=> $m->ID,
+				'mime-type'	=> $m->post_mime_type,
+				'name'		=> $m->post_name,
+				'size'		=> $size
+			);
+		}
+	}
+
 	public function call_get_page_list() {
 		$pages = (array) get_pages( array (
 			'hierarchical'		=> FALSE
