@@ -15,6 +15,10 @@ License is <a href="http://www.opensource.org/licenses/mit-license.php">MIT</a> 
 
 ## ChangeLog
 
+### 0.4.0 -
+- Allow other plugins to hook in and filter the data (sivel)
+  https://github.com/josephscott/pressfs/pull/2
+
 ### 0.3.0 - Tue 28 Jun 2011
 - Read only exposure of media files managed by WordPress in the top level /media directory
 - New pressfs WordPress API methods: get_media_file, get_media_list
