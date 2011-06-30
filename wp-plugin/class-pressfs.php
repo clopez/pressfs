@@ -47,13 +47,16 @@ class PressFS {
 				$parent = $cat_parent->name;
 			}
 
-			$this->data['categories'][$c->term_id] = array(
-				'id'			=> $c->term_id,
-				'name'			=> $c->name,
-				'slug'			=> $c->slug,
-				'description'	=> $c->description,
-				'count'			=> $c->count,
-				'parent'		=> $parent
+			$this->data['categories'][$c->term_id] = apply_filters(
+				'pressfs_category',
+				array(
+					'id'			=> $c->term_id,
+					'name'			=> $c->name,
+					'slug'			=> $c->slug,
+					'description'	=> $c->description,
+					'count'			=> $c->count,
+					'parent'		=> $parent
+				)
 			);
 		}
 	}
@@ -93,13 +96,16 @@ class PressFS {
 			$path = get_attached_file( $m->ID );
 			$size = filesize( $path );
 
-			$this->data['media'][$m->ID] = array(
-				'date-gmt'	=> $m->post_date_gmt,
-				'extension'	=> $file['extension'],
-				'id'		=> $m->ID,
-				'mime-type'	=> $m->post_mime_type,
-				'name'		=> $m->post_name,
-				'size'		=> $size
+			$this->data['media'][$m->ID] = apply_filters(
+				'pressfs_media',
+				array(
+					'date-gmt'	=> $m->post_date_gmt,
+					'extension'	=> $file['extension'],
+					'id'		=> $m->ID,
+					'mime-type'	=> $m->post_mime_type,
+					'name'		=> $m->post_name,
+					'size'		=> $size
+				)
 			);
 		}
 	}
@@ -118,16 +124,19 @@ class PressFS {
 				$parent = "{$p->ID}-{$page_parent->title}";
 			}
 
-			$this->data['pages'][$p->ID] = array(
-				'id'			=> $p->ID,
-				'date-gmt'		=> $p->post_date_gmt,
-				'title'			=> $p->post_title,
-				'status'		=> $p->post_status,
-				'password'		=> $p->post_password,
-				'type'			=> $p->post_type,
-				'url'			=> $page_url,
-				'name'			=> $p->post_name,
-				'parent'		=> $parent
+			$this->data['pages'][$p->ID] = apply_filters(
+				'pressfs_page',
+				array(
+					'id'			=> $p->ID,
+					'date-gmt'		=> $p->post_date_gmt,
+					'title'			=> $p->post_title,
+					'status'		=> $p->post_status,
+					'password'		=> $p->post_password,
+					'type'			=> $p->post_type,
+					'url'			=> $page_url,
+					'name'			=> $p->post_name,
+					'parent'		=> $parent
+				)
 			);
 		}
 	}
@@ -174,8 +183,7 @@ class PressFS {
 			'categories'	=> $cats,
 		);
 
-		$this->data['post'] = $post_data;
-		return $post_data;
+		return apply_filters( 'pressfs_post', $post_data );
 	}
 
 	public function call_get_post_list() {
@@ -196,12 +204,15 @@ class PressFS {
 
 	public function call_get_tag_list() {
 		foreach ( (array) get_tags() as $t ) {
-			$this->data['tags'][$t->term_id] = array(
-				'id'			=> $t->term_id,
-				'name'			=> $t->name,
-				'slug'			=> $t->slug,
-				'description'	=> $t->description,
-				'count'			=> $t->count
+			$this->data['tags'][$t->term_id] = apply_filters(
+				'pressfs_tag',
+				array(
+					'id'			=> $t->term_id,
+					'name'			=> $t->name,
+					'slug'			=> $t->slug,
+					'description'	=> $t->description,
+					'count'			=> $t->count
+				)
 			);
 		}
 	}
@@ -213,16 +224,19 @@ class PressFS {
 			$first_name = get_user_meta( $u->ID, 'first_name', TRUE );
 			$last_name = get_user_meta( $u->ID, 'last_name', TRUE );
 
-			$this->data['users'][$u->user_login] = array(
-				'id'			=> $u->ID,
-				'login'			=> $u->user_login,
-				'nice-name'		=> $u->user_nicename,
-				'email'			=> $u->user_email,
-				'url'			=> $u->user_url,
-				'registered'	=> $u->user_registered,
-				'display-name'	=> $u->display_name,
-				'first-name'	=> $first_name,
-				'last-name'		=> $last_name
+			$this->data['users'][$u->user_login] = apply_filters(
+				'pressfs_user',
+				array(
+					'id'			=> $u->ID,
+					'login'			=> $u->user_login,
+					'nice-name'		=> $u->user_nicename,
+					'email'			=> $u->user_email,
+					'url'			=> $u->user_url,
+					'registered'	=> $u->user_registered,
+					'display-name'	=> $u->display_name,
+					'first-name'	=> $first_name,
+					'last-name'		=> $last_name
+				)
 			);
 		}
 	}
@@ -273,7 +287,7 @@ class PressFS {
 	}
 
 	public function init() {
-		if ( 
+		if (
 			!empty( $_GET['pressfs'] )
 			&& $_GET['pressfs'] == 1
 			&& !empty( $_GET['call'] )
@@ -298,7 +312,7 @@ class PressFS {
 		}
 
 		$this->$method();
-		echo json_encode( $this->data );
+		echo json_encode( apply_filters( 'pressfs_data', $this->data ) );
 		exit;
 	}
 
