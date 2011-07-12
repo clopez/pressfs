@@ -444,6 +444,8 @@ class PressFS( fuse.Fuse ) :
 						}
 					)
 
+				# flush the request cache after each write completes
+				self.req_cache = { }
 				del self.write_files[path]
 
 	def truncate( self, path, len ) :
